@@ -30,14 +30,16 @@ Value(13):
     PV值
 """
 def concate_to_feature_1():
-    for index in range(1,22):
-        print('file ' + str(index) + ' is processing')
+    path = os.path.join(os.path.abspath('..'), 'feature')
+    files = os.listdir(path)
+    for file in files:
+        print('file ' + file + ' is processing')
         dataset = {}
 
         empty = {}
-        with open(os.path.join(os.path.abspath('..'), 'feature', str(index) + '.txt'), 'r', encoding='UTF-8') as fread_feature, \
-                open(os.path.join(os.path.abspath('..'), 'dat_2.0', str(index) + '.txt'), 'r', encoding='UTF-8') as fread_data, \
-                open(os.path.join(os.path.abspath('..'), 'feature_1.0', str(index) + '.txt'), 'w', encoding='UTF-8') as fwrite:
+        with open(os.path.join(os.path.abspath('..'), 'feature', file), 'r', encoding='UTF-8') as fread_feature, \
+                open(os.path.join(os.path.abspath('..'), 'dat_2.0', file), 'r', encoding='UTF-8') as fread_data, \
+                open(os.path.join(os.path.abspath('..'), 'feature_1.0', file), 'w', encoding='UTF-8') as fwrite:
 
             feature_dict = fread_feature.read()
             feature_dict = json.loads(feature_dict)
@@ -70,13 +72,6 @@ def concate_to_feature_1():
 
             dataset.clear()
 
-
-    vv = np.array(vv, dtype='int')
-    print('total nums:'+str(total_num))
-    print(np.max(vv))
-    print(np.sum(np.where(vv>5,1,0)))
-    print(np.sum(np.where(vv>10,1,0)))
-    print(np.sum(np.where(vv>15,1,0)))
 
 if __name__ == '__main__':
     concate_to_feature_1()

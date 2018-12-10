@@ -33,7 +33,7 @@ def get_data(data_dir, target_dir):
     target = []
     data = numpy.loadtxt('../dataset/'+ data_dir)
     target = numpy.loadtxt('../dataset/'+ target_dir)
-    
+
     data = numpy.array(data, dtype = 'float64')    
     target = numpy.array(target, dtype='int')
 
@@ -43,14 +43,10 @@ def get_data(data_dir, target_dir):
     data = (data - data_min)/(data_max - data_min)
     data = numpy.nan_to_num(data)
 
-    #train_data,test_data,train_target,test_target = train_test_split(data,target,test_size=0.3,random_state=1)
-    #count = Counter(train_target)
-    #print(count)
-
     return data, target
 
 """
-try regression again 
+try linear regression again
 """
 def Linear_Regression():
     test_data, test_target, train_data, train_target = get_data()
@@ -77,26 +73,19 @@ def Logistic_Regression():
 
 def RFC():
     train_data, train_target = get_data('data.txt', 'target.txt')
-    test_data, test_target = get_data('test_data.txt', 'test_target.txt')
     model_rfc = BalancedBaggingClassifier(n_estimators=100, base_estimator=DecisionTreeClassifier(), sampling_strategy='auto', replacement=False,random_state=0)
-    #return model_rfc
-    #model_rfc = BalancedRandomForestClassifier(n_estimators=50, random_state=0)
-
     model_rfc.fit(train_data, train_target)
-    predicted_target = model_rfc.predict(test_data)
-    print(classification_report(test_target,predicted_target))
-    #行代表真实数据，列代表预测数据
-    print(confusion_matrix(test_target,predicted_target, labels=[0,1,2,3,4], sample_weight=None))
-    #y_one_hot = label_binarize(test_target, numpy.arange(5))
-    #print(roc_auc_score(y_one_hot,predicted_target, average='micro'))
+    save_path_name = '../../model/' + 'rfc.m'
+    joblib.dump(model_rfc, save_path_name)
+
 
 def KNN_train():
     print('knn model is training')
     train_data = numpy.loadtxt('../dataset/'+ 'knn_data.txt')
     train_target = numpy.loadtxt('../dataset/'+ 'knn_target.txt')
 
-    copy = train_data[:, 0:29] #no normalize
-    data = train_data[:, 29:]
+    copy = train_data[:, 0:3] #no normalize
+    data = train_data[:, 3:]
     data_max = numpy.max(data, axis=0)#axis=0 -> max value of each column
     data_max[data_max==0]=1
     data_min = numpy.min(data, axis=0)
@@ -111,10 +100,10 @@ def KNN_train():
         item = train_data[index, :]
         key = str(item[0])+'_'+str(item[1])+'_'+str(item[2])
         if key not in data_dict:
-            data_dict[key] = [item[29:]]
+            data_dict[key] = [item[3:]]
             target_dict[key] = [[train_target[index]]]
         else:
-            data_dict[key].append(item[29:])
+            data_dict[key].append(item[3:])
             target_dict[key].append(train_target[index])
 
     model_dict = {}
@@ -128,98 +117,12 @@ def KNN_train():
         model_dict[key]= model
 
     print('knn model is done')
-    return model_dict
-
-
-def KNN_predict():
-    print('knn model is testing')
-    test_data = numpy.loadtxt('../dataset/'+ 'knn_test_data.txt')
-    #test_target = numpy.loadtxt('../dataset/'+ 'knn_test_target.txt')
-
-    copy = test_data[:, 0:29] #no normalize
-    #print(copy.shape)
-    data = test_data[:, 29:]
-    data_max = numpy.max(data, axis=0)#axis=0 -> max value of each column
-    data_max[data_max==0]=1
-    data_min = numpy.min(data, axis=0)
-    data = (data - data_min)/(data_max - data_min)
-    data = numpy.nan_to_num(data)
-    #print(data.shape)
-    test_data = numpy.hstack((copy,data))
-    #print(test_data.shape)
-
-
-    predict_target = []
-    data_dict = {}
-    num = test_data.shape[0]
-    for index in range(num):
-        item = test_data[index, :]
-        key = str(item[0])+'_'+str(item[1])+'_'+str(item[2])
-        if key not in data_dict:
-            data_dict[key] = []
-        data_dict[key].append(item[3:])
-
-    data, target = [], []
-    test_target  = []
-    predicted = []
-    model_dict = KNN_train()
-    for key in data_dict:
-        if key in model_dict:
-            model = model_dict[key]
-            value = numpy.array(data_dict[key])
-            tmp = model.predict(value[:, 26:])
-
-            predicted.extend(tmp)
-            test_target.extend(value[:, 24])
-
-            tmp = tmp.reshape(-1, 1)
-            tmp_data = value[:, :24]
-            tmp_data = numpy.hstack((tmp_data, tmp))
-            target.extend(value[:, 25])
-            data.extend(tmp_data)
-        else:
-            tmp = numpy.array([[5] for i in range(value.shape[0])])
-            tmp_data = value[:, :24]
-            tmp_data = numpy.hstack((tmp_data, tmp))
-            target.extend(value[:, 25])
-
-            predicted.extend(tmp.reshape(-1))
-            test_target.extend(value[:, 24])
-
-            data.extend(tmp_data)
-
-    print('mean squared error')
-    print(mean_squared_error(numpy.array(predicted), numpy.array(test_target)))
-    
-    data = numpy.array(data)
-    target = numpy.array(target)
-    print('knn predict is done')
-    return data, target
-
-
-def coldstart():
-    print('cold start is training')
-    knn_data, knn_target = KNN_predict()
-
-    data_max = numpy.max(knn_data, axis=0)  # axis=0 -> max value of each column
-    data_max[data_max == 0] = 1
-    data_min = numpy.min(knn_data, axis=0)
-    data = (knn_data - data_min) / (data_max - data_min)
-    knn_data = numpy.nan_to_num(data)
-
-    train_data, train_target = get_data('train_data.txt', 'train_target.txt')
-    print('train_target:')
-    print(Counter(train_target))
-    #test_data, test_target = get_data('test_data.txt', 'test_target.txt')
-    model_rfc = BalancedBaggingClassifier(n_estimators=100, base_estimator=DecisionTreeClassifier(),
-                                          sampling_strategy='auto', replacement=False, random_state=0)
-    model_rfc.fit(train_data, train_target)
-
-    predicted_target = model_rfc.predict(knn_data)
-    print(classification_report(knn_target, predicted_target))
-    # 行代表真实数据，列代表预测数据
-    print(confusion_matrix(knn_target, predicted_target, labels=[0, 1, 2, 3, 4], sample_weight=None))
-
+    save_path = '../../model/'
+    for key in model_dict:
+        model = model_dict[key]
+        name = key+'.m'
+        path = os.path.join(save_path, name)
+        joblib.dump(model, path)
 
 
 def nn():
@@ -239,5 +142,7 @@ def nn():
     #print(proba)
 
 if __name__ == '__main__':
-    KNN_predict()
+    RFC()
+    KNN_train()
+    #KNN_predict()
     #Logistic_Regression()

@@ -124,19 +124,21 @@ def extra_feature():
     feature = []
     file_count = []
     file_count_num = -1
+    file_name = []
 
     program_type_set = set()
     topic_set = set()
     form_type_set = set()
 
-
-    for index in range(1,22):
-        print('file ' + str(index) + ' is processing')
-        with open(os.path.join(program_information_dir,str(index)+'.txt'),'r',encoding='UTF-8')	as fread:
+    files = os.listdir(program_information_dir)
+    for file in files:
+        print('file ' + file + ' is processing')
+        with open(os.path.join(program_information_dir, file),'r',encoding='UTF-8')	as fread:
             res = fread.read()
             res = json.loads(res)
             file_count_num = file_count_num + len(res)
             file_count.append(file_count_num)
+            file_name.append(file)
 
             for item in res:
                 name_list = None
@@ -265,8 +267,8 @@ def extra_feature():
         tmp_feature[feature[index][0]] = tmp_lst
 
         if index == file_count[file_index]:
-            print('file ' + str(file_index + 1) + ' is processing')
-            with open(os.path.join(feature_dir, str(file_index + 1) + '.txt'), 'w', encoding='UTF-8') as fwrite:
+            print('file ' + file_name[file_index] + ' is processing')
+            with open(os.path.join(feature_dir, file_name[file_index]), 'w', encoding='UTF-8') as fwrite:
                 fwrite.write(json.dumps(tmp_feature, ensure_ascii=False))
                 tmp_feature.clear()
             file_index = file_index + 1
@@ -284,19 +286,22 @@ def extra_feature_optimization():
 
     file_count = []
     file_count_num = -1
+    file_name = []
 
     program_type_set = set()
     topic_set = set()
     form_type_set = set()
     actor_lst = []
 
-    for index in range(1,22):
-        print('file ' + str(index) + ' is processing')
-        with open(os.path.join(program_information_dir,str(index)+'.txt'),'r',encoding='UTF-8')	as fread:
+    files = os.listdir(program_information_dir)
+    for file in files:
+        print('file ' + file + ' is processing')
+        with open(os.path.join(program_information_dir, file),'r',encoding='UTF-8')	as fread:
             res = fread.read()
             res = json.loads(res)
             file_count_num = file_count_num + len(res)
             file_count.append(file_count_num)
+            file_name.append(file)
 
             for item in res:
                 release_time = ''
@@ -429,8 +434,8 @@ def extra_feature_optimization():
         tmp_feature[feature[index][0]] = tmp_lst
 
         if index == file_count[file_index]:
-            print('file ' + str(file_index + 1) + ' is processing')
-            with open(os.path.join(feature_dir, str(file_index + 1) + '.txt'), 'w', encoding='UTF-8') as fwrite:
+            print('file ' + file_name[file_index] + ' is processing')
+            with open(os.path.join(feature_dir, file_name[file_index]), 'w', encoding='UTF-8') as fwrite:
                 fwrite.write(json.dumps(tmp_feature, ensure_ascii=False))
                 tmp_feature.clear()
             file_index = file_index + 1
