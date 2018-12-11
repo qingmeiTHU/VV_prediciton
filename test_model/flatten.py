@@ -101,19 +101,14 @@ def flatten(file_list):
     for i in range(len(flatten_target)):
         if flatten_target[i] < target[level4]:
             flatten_target[i] = 0
-            KNN_data[i][28] = 0
         elif flatten_target[i] < target[level3]:
             flatten_target[i] = 1
-            KNN_data[i][28] = 1
         elif flatten_target[i] < target[level2]:
             flatten_target[i] = 2
-            KNN_data[i][28] = 2
         elif flatten_target[i] < target[level1]:
             flatten_target[i] = 3
-            KNN_data[i][28] = 3
         else:
             flatten_target[i] = 4
-            KNN_data[i][28] = 4
 
 
     flatten_loc = numpy.array([i for i in range(len(flatten_data))])

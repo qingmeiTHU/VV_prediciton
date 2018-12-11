@@ -1,0 +1,2 @@
+根据前一小时的点击量，做一个dict指示哪些ids有previous click
+以供查询！！！

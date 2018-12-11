@@ -48,16 +48,11 @@ def concate_to_feature_1():
                 if tmp[1] not in feature_dict:
                     continue
 
-                #if not judge(tmp[2]):
-                #    continue
-
                 Item = feature_dict[tmp[1]]
                 time_vector, time_num, weekday_num = process_time(tmp[0])
                 releasetime_interval = calculate_releasetime_interval(tmp[0], Item[4])
                 createtime_interval = calculate_createtime_interval(tmp[0], Item[0])
                 key = tmp[0] + '_' + tmp[1]
-
-
 
                 dataset[key] = []
                 dataset[key].extend(Item[1:4])
@@ -65,18 +60,10 @@ def concate_to_feature_1():
                 dataset[key].append(Item[7][0:300])
                 dataset[key].extend([time_vector, time_num, weekday_num, createtime_interval, releasetime_interval, tmp[2], tmp[3]])
 
-
             fwrite.write(json.dumps(dataset, ensure_ascii=False))
 
             dataset.clear()
 
-
-    vv = np.array(vv, dtype='int')
-    print('total nums:'+str(total_num))
-    print(np.max(vv))
-    print(np.sum(np.where(vv>5,1,0)))
-    print(np.sum(np.where(vv>10,1,0)))
-    print(np.sum(np.where(vv>15,1,0)))
 
 if __name__ == '__main__':
     concate_to_feature_1()
