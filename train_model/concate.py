@@ -59,8 +59,6 @@ def concate_to_feature_1():
                 createtime_interval = calculate_createtime_interval(tmp[0], Item[0])
                 key = tmp[0] + '_' + tmp[1]
 
-
-
                 dataset[key] = []
                 dataset[key].extend(Item[1:4])
                 dataset[key].extend(Item[5:7])

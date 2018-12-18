@@ -15,11 +15,18 @@ import os
 
 LIST = ['1002601', '1002581', '1003861', '1003862', '1003863', '1003864', '1003865', '1003866', '1004041', '1004121',
         '1002781', '1004261', '1004262', '1004281', '1004322', '1004321', '1004301', '1004422', '1004421', '1001381']
-def query_first() :
+
+def query_first(LIST) :
     query_data = {
         "size": 10000,
         "query": {
-            "match_all":{}
+            "constant_score":{
+                "filter": {
+                    "terms": {
+                        "PRDPACK_ID": LIST
+                    }
+                }
+            }
         }
     }
 
@@ -89,9 +96,6 @@ def es_search():
         for item in data:
             source = item['_source']
             fields = source['fields']
-
-            if source['PRDPACK_ID'] not in LIST:
-                continue
 
             if 'DISPLAYTYPE' not in fields.keys() or fields['DISPLAYTYPE']!='1001':
                 continue

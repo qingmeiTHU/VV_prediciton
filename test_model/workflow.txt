@@ -2,4 +2,4 @@ get_id.py 从es获取全量的数据
 extra_feature.py 照旧，处理特征信息，
 concate.py同时需要加处理时间信息的部分，另外分离有previous click和非previous click的数据集
 flatten对两种数据集均变为向量的形式；
-learn分别对两种进行预测
+learn分别对两种进行预测，

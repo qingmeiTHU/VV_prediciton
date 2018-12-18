@@ -12,7 +12,7 @@
 import json
 import os
 import time
-from es_search import es_search
+from es_search_all import es_search
 
 
 """
@@ -129,13 +129,14 @@ def write_IDs():
                 for ID in ids_temp:
                     fwrite.write(str(ID) + '\n')
             ids_temp.clear()
+
     with open(os.path.join(IDs_dir, str(int(1 + count / 10000)) + '.txt'), 'w', encoding='UTF-8') as fwrite:
         for ID in ids_temp:
             fwrite.write(str(ID) + '\n')
 
 
 """
-根据IDs下边的21个文件，将result_merge.csv文件分成21份
+根据IDs下边的21个文件，将result_merge.csv文件分成同样的份数，存储在dat_1.0里
 """
 def split_result_merge_csv():
     dict = {}
@@ -146,10 +147,11 @@ def split_result_merge_csv():
             if temp[1] not in dict.keys():
                 dict[temp[1]] = []
             dict[temp[1]].append(temp[0] + '_' + str(temp[2]))
-    
-    for index in range(1,22):
-        print('file ' + str(index) + ' is processing')
-        with open(os.path.join(os.path.abspath('..'), 'IDs', str(index)+'.txt'), 'r', encoding='UTF-8') as fread, open(os.path.join(os.path.abspath('..'), 'dat_1.0', str(index)+'.txt'), 'w', encoding='UTF-8') as fwrite:
+
+    pathDir = os.listdir(os.path.join(os.path.abspath('..'), 'IDs'))
+    for file in pathDir:
+        print('file ' + file + ' is processing')
+        with open(os.path.join(os.path.abspath('..'), 'IDs', file), 'r', encoding='UTF-8') as fread, open(os.path.join(os.path.abspath('..'), 'dat_1.0', file), 'w', encoding='UTF-8') as fwrite:
             for line in fread.readlines():
                 line = line.replace('\r','').replace('\n','')
                 for item in dict[line]:
@@ -158,10 +160,11 @@ def split_result_merge_csv():
 
 
 def get_history_pv_data():
-    for index in range(1,22):
-        print('file ' + str(index) + ' is processing')
-        with open(os.path.join(os.path.abspath('..'), 'dat_1.0', str(index) + '.txt'), 'r', encoding='UTF-8') as fread, \
-             open(os.path.join(os.path.abspath('..'), 'dat_2.0', str(index) + '.txt'), 'w', encoding='UTF-8') as fwrite:
+    path = os.listdir(os.path.join(os.path.abspath('..'), 'dat_1.0'))
+    for file in path:
+        print('file ' + file + ' is processing')
+        with open(os.path.join(os.path.abspath('..'), 'dat_1.0', file), 'r', encoding='UTF-8') as fread, \
+             open(os.path.join(os.path.abspath('..'), 'dat_2.0', file), 'w', encoding='UTF-8') as fwrite:
 
             previous_pv = {}
 
@@ -186,11 +189,11 @@ b = open(r"1.txt", "r",encoding='UTF-8')
 out = b.read()
 out =  json.loads(out)
 """
-def read_IDs(num):
-    print('file ' + str(num) + ' is processing')
+def read_IDs(filename):
+    print('file ' + filename + ' is processing')
     IDs_dir = os.path.join(os.path.abspath('..'), 'IDs')
     program_information_dir = os.path.join(os.path.abspath('..'), 'program_information')
-    with open(os.path.join(IDs_dir, str(num) + '.txt'), 'r', encoding='UTF-8') as fread:
+    with open(os.path.join(IDs_dir, filename), 'r', encoding='UTF-8') as fread:
         count = 0
         ID_list = []
         res = []
@@ -205,7 +208,7 @@ def read_IDs(num):
                 res = res + temp
 
         res_file = json.dumps(res)
-        with open(os.path.join(program_information_dir, str(num) + '.txt'), 'w', encoding='UTF-8') as fwrite:
+        with open(os.path.join(program_information_dir, filename), 'w', encoding='UTF-8') as fwrite:
             fwrite.write(res_file)
             fwrite.flush()
 
@@ -214,8 +217,9 @@ def read_IDs(num):
 
 """
 def read_IDs_all():
-    for i in range(1,22):
-        read_IDs(i)
+    path = os.listdir(os.path.join(os.path.abspath('..'), 'IDs'))
+    for file in path:
+        read_IDs(file)
 
 
 """
@@ -225,8 +229,9 @@ def get_clean_data():
     count = 0
     program_information_dir = os.path.join(os.path.abspath('..'), 'program_information')
     program_information_1_dir = os.path.join(os.path.abspath('..'), 'program_information_1.0')
-    for index in range(1, 22):
-        with open(os.path.join(program_information_dir, str(index) + '.txt'), 'r', encoding='UTF-8')    as fread:
+    files = os.listdir(program_information_dir)
+    for file in files:
+        with open(os.path.join(program_information_dir, file), 'r', encoding='UTF-8')    as fread:
             res = fread.read()
             res = json.loads(res)
             for i in range(len(res) - 1, -1, -1):
@@ -243,11 +248,11 @@ def get_clean_data():
                             temp = temp + str(res[i][8][j])
                     res[i][8] = temp
             count += len(res)
-            with open(os.path.join(program_information_1_dir, str(index) + '.txt'), 'w', encoding='UTF-8') as fwrite:
+            with open(os.path.join(program_information_1_dir, file), 'w', encoding='UTF-8') as fwrite:
                 res = json.dumps(res)
                 fwrite.write(res)
                 fwrite.flush()
-        print('file ' + str(index) + ' has done')
+        print('file ' + file + ' has done')
     print(str(count))
 
 
@@ -261,4 +266,4 @@ if __name__ == '__main__':
     #split_result_merge_csv()
     #get_history_pv_data()
     #read_IDs_all()
-    #get_clean_data()
+    get_clean_data()

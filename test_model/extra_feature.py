@@ -117,26 +117,28 @@ def calculate_createtime_interval(time_str, createtime_str):
 Key : contentID
 Value: 标题，createtime, displaytype_one_hot, formtype_one_hot, duration, detail, keywords, releasetime, 主题_one_hot, program_type_one_hot, 演员_one_hot
 '''
-def extra_feature():
+'''def extra_feature():
     program_information_dir = os.path.join(os.path.abspath('..'), 'program_information_1.0')
     feature_dir = os.path.join(os.path.abspath('..'), 'feature')
     actor_lst = []
     feature = []
     file_count = []
     file_count_num = -1
+    file_name = []
 
     program_type_set = set()
     topic_set = set()
     form_type_set = set()
 
-
-    for index in range(1,22):
-        print('file ' + str(index) + ' is processing')
-        with open(os.path.join(program_information_dir,str(index)+'.txt'),'r',encoding='UTF-8')	as fread:
+    files = os.listdir(program_information_dir)
+    for file in files:
+        print('file ' + file + ' is processing')
+        with open(os.path.join(program_information_dir, file),'r',encoding='UTF-8')	as fread:
             res = fread.read()
             res = json.loads(res)
             file_count_num = file_count_num + len(res)
             file_count.append(file_count_num)
+            file_name.append(file)
 
             for item in res:
                 name_list = None
@@ -265,11 +267,11 @@ def extra_feature():
         tmp_feature[feature[index][0]] = tmp_lst
 
         if index == file_count[file_index]:
-            print('file ' + str(file_index + 1) + ' is processing')
-            with open(os.path.join(feature_dir, str(file_index + 1) + '.txt'), 'w', encoding='UTF-8') as fwrite:
+            print('file ' + file_name[file_index] + ' is processing')
+            with open(os.path.join(feature_dir, file_name[file_index]), 'w', encoding='UTF-8') as fwrite:
                 fwrite.write(json.dumps(tmp_feature, ensure_ascii=False))
                 tmp_feature.clear()
-            file_index = file_index + 1
+            file_index = file_index + 1'''
 
 
 '''
@@ -280,31 +282,35 @@ Value: createtime, displaytype, formtype, duration, releasetime, 主题_one_hot,
 def extra_feature_optimization():
     program_information_dir = os.path.join(os.path.abspath('..'), 'program_information_1.0')
     feature_dir = os.path.join(os.path.abspath('..'), 'feature')
-    feature = []
+    map_dir = os.path.join(os.path.abspath('../..'), 'map', 'mapping.txt')
+    map_file = open(map_dir, 'r', encoding='utf-8')
+    map = json.load(map_file)
 
-    file_count = []
-    file_count_num = -1
+    display_dict = {'1000':0,'1001':1,'1002':2,'1003':3,'1004':4,'1005':5,'1006':6,'1007':7,'1008':8,'1009':9,'1010':10,'1011':11}
+    form_type_dict = map['form_type']
+    program_type_dict = map['program_type']
+    actor_dict = map['actor']
+    topic_dict = map['topic']
 
-    program_type_set = set()
-    topic_set = set()
-    form_type_set = set()
-    actor_lst = []
 
-    for index in range(1,22):
-        print('file ' + str(index) + ' is processing')
-        with open(os.path.join(program_information_dir,str(index)+'.txt'),'r',encoding='UTF-8')	as fread:
+    files = os.listdir(program_information_dir)
+    for file in files:
+        feature = {}
+        print('file ' + file + ' is processing')
+        with open(os.path.join(program_information_dir, file),'r',encoding='UTF-8')	as fread:
             res = fread.read()
             res = json.loads(res)
-            file_count_num = file_count_num + len(res)
-            file_count.append(file_count_num)
 
             for item in res:
                 release_time = ''
-                topic = []
                 programtype = ''
-                peoples = set() # delete the repeated words
-                peoples_ID = set() # delete the repeated words
                 keywords = []
+
+                one_hot_actor = zeros(len(actor_dict))
+                topic_vector = zeros(len(topic_dict))
+                program_type_num = len(program_type_dict)
+                form_type_num = len(form_type_dict)
+                display_type_num = len(display_dict)
 
                 # name_list = None
                 #name_list = list(jieba.cut(item[1],cut_all = False))
@@ -315,9 +321,8 @@ def extra_feature_optimization():
                     for iter in item[9]:
                         if iter['propertyKey'] in ['主演','演员','男主角','嘉宾','主持人','导演','编剧','人物','演出人员','报道人物','歌手姓名','解说员','明星','原著作者']:
                             if 'propertyValue' in iter.keys() and iter['propertyValue']!='其他' and iter['propertyValue']!='无':
-                                peoples.add(iter['propertyValue'])
-                                if 'propertyItem' in iter.keys() and iter['propertyItem'].isdigit():
-                                    peoples_ID.add(iter['propertyItem'])
+                                if iter['propertyValue'] in actor_dict:
+                                    one_hot_actor[actor_dict[iter['propertyValue']]] = 1
 
                         elif time_flag== False and iter['propertyKey'] in ['国内首映时间','首播时间','上映时间','播出时间','待映日期','发行年份','事件发生时间','播出年代']:
                             time = process_date(iter['propertyValue'])
@@ -327,8 +332,8 @@ def extra_feature_optimization():
 
                         elif iter['propertyKey'] in ['内容形态','节目形态']:
                             programtype = iter['propertyValue']
-                            if programtype:
-                                program_type_set.add(programtype)
+                            if programtype and programtype in program_type_dict:
+                                program_type_num = program_type_dict[programtype]
 
                         elif iter['propertyKey'] in ['内容类型','内容分类','主题','描述年代']:
                             temp = process_content_type(iter['propertyValue'])
@@ -336,104 +341,28 @@ def extra_feature_optimization():
                                 pass
                             else:
                                 for j in temp:
-                                    topic.append(j)
-                                    topic_set.add(j)
+                                    if j in topic_dict:
+                                        topic_vector[topic_dict[j]] = 1
 
                 if time_flag==False:
                     release_time = dt.strftime(dt.strptime(item[2],'%Y-%m-%d %H:%M:%S'),'%Y-%m')
 
+
                 keywords = item[8].split(',')
-                #print(peoples_ID)
 
-                actor_lst.extend(list(peoples))
-                # form_type one-hot encoder
-                form_type_set.add(item[5])
+                if item[5] and item[5] in form_type_dict:
+                    form_type_num = form_type_dict[item[5]]
 
-                feature.append([item[0],item[1],item[2],item[3],item[5],item[6],item[7],keywords,release_time,topic,programtype,peoples,peoples_ID])
+                if item[3] and item[3] in display_dict:
+                    display_type_num = display_dict[item[3]]
+
+                feature[item[0]] = [item[0],item[2],display_type_num,form_type_num,item[6],release_time,topic_vector.tolist(),program_type_num,one_hot_actor.tolist()]
 
 # ID, name, createtime, displaytime, formtype, cduration, detail, keywords, release_time, topic, programtype, peoples, peoplesID
-
-    # find the top 2000 actors
-    counter = collections.Counter(actor_lst)
-    sorted_actor = sorted(counter.items(), key= lambda x:x[1], reverse=True)
-    invalid_actor = dict(sorted_actor[:300])
-
-    # one-hot encoding for actor id
-    num = 0
-    for item in invalid_actor:
-        invalid_actor[item] = num
-        num = num + 1
-
-    display_dict = {'1000':0,'1001':1,'1002':2,'1003':3,'1004':4,'1005':5,'1006':6,'1007':7,'1008':8,'1009':9,'1010':10,'1011':11}
-
-    num = 0
-    form_type_dict = {}
-    for i in form_type_set:
-        form_type_dict[i] = num
-        num = num + 1
-
-    programtype_dict = {}
-    num=0
-    for i in program_type_set:
-        programtype_dict[i] = num
-        num = num + 1
-
-    topic_dict = {}
-    topic_len = len(topic_set)
-    num = 0
-    for i in topic_set:
-        topic_dict[i] = num
-        num = num + 1
-
-    count = 0
-    tmp_feature = {}
-    file_index = 0
-    for index in range(len(feature)):
-        # delete the useless actor name and actor id
-        
-        count = count + 1
-        one_hot_actor = zeros(2000)
-        topic_vector = zeros(topic_len)
-
-        display_num = len(display_dict)
-        if feature[index][3] and feature[index][3] in display_dict:
-            display_num = display_dict[feature[index][3]]
-
-        form_type_num = len(form_type_dict)
-        if feature[index][4]:
-            form_type_num = form_type_dict[feature[index][4]]
-
-        programtype_num = len(programtype_dict)
-        if feature[index][10]:
-            programtype_num = programtype_dict[feature[index][10]]
-
-
-        for iter in feature[index][11]:
-            if iter in invalid_actor:
-                one_hot_actor[invalid_actor[iter]] = 1
-
-
-        for iter in feature[index][9]:
-            topic_vector[topic_dict[iter]] = 1
-
-        #最终特征
-        tmp_lst = []
-        tmp_lst.append(feature[index][2])#
-        tmp_lst.append(display_num)
-        tmp_lst.append(form_type_num)
-        tmp_lst.append(feature[index][5])
-        tmp_lst.append(feature[index][8])
-        tmp_lst.append(topic_vector.tolist())
-        tmp_lst.append(programtype_num)
-        tmp_lst.append(one_hot_actor.tolist())
-        tmp_feature[feature[index][0]] = tmp_lst
-
-        if index == file_count[file_index]:
-            print('file ' + str(file_index + 1) + ' is processing')
-            with open(os.path.join(feature_dir, str(file_index + 1) + '.txt'), 'w', encoding='UTF-8') as fwrite:
-                fwrite.write(json.dumps(tmp_feature, ensure_ascii=False))
-                tmp_feature.clear()
-            file_index = file_index + 1
+            print('file ' + file + ' is processing')
+            with open(os.path.join(feature_dir, file), 'w', encoding='UTF-8') as fwrite:
+                fwrite.write(json.dumps(feature, ensure_ascii=False))
+                feature.clear()
 
 if __name__ == '__main__':
     extra_feature_optimization()

@@ -117,7 +117,7 @@ def calculate_createtime_interval(time_str, createtime_str):
 Key : contentID
 Value: 标题，createtime, displaytype_one_hot, formtype_one_hot, duration, detail, keywords, releasetime, 主题_one_hot, program_type_one_hot, 演员_one_hot
 '''
-def extra_feature():
+'''def extra_feature():
     program_information_dir = os.path.join(os.path.abspath('..'), 'program_information_1.0')
     feature_dir = os.path.join(os.path.abspath('..'), 'feature')
     actor_lst = []
@@ -193,6 +193,8 @@ def extra_feature():
                 # form_type one-hot encoder
                 form_type_set.add(item[5])
 
+    map = {} # the dict for test mapping
+
     # find the top 2000 actors
     counter = collections.Counter(actor_lst)
     sorted_actor = sorted(counter.items(), key= lambda x:x[1], reverse=True)
@@ -203,6 +205,7 @@ def extra_feature():
     for item in invalid_actor:
         invalid_actor[item] = num
         num = num + 1
+    map['actor'] = invalid_actor
 
     num = 0
 
@@ -212,6 +215,7 @@ def extra_feature():
     for i in form_type_set:
         form_type_dict[i] = num
         num = num + 1
+    map['form_type'] = form_type_dict
 
     programtype_dict = {}
     programtype_len = len(program_type_set)
@@ -219,6 +223,7 @@ def extra_feature():
     for i in program_type_set:
         programtype_dict[i] = num
         num = num + 1
+    map['program_type'] = programtype_dict
 
     topic_dict = {}
     topic_len = len(topic_set)
@@ -226,6 +231,10 @@ def extra_feature():
     for i in topic_set:
         topic_dict[i] = num
         num = num + 1
+    map['topic'] = topic_dict
+
+    with open('../../map/mapping.txt') as fwrite:
+        fwrite.write(json.dumps(map), ensure_ascii=False)
 
     count = 0
     tmp_feature = {}
@@ -271,7 +280,7 @@ def extra_feature():
             with open(os.path.join(feature_dir, file_name[file_index]), 'w', encoding='UTF-8') as fwrite:
                 fwrite.write(json.dumps(tmp_feature, ensure_ascii=False))
                 tmp_feature.clear()
-            file_index = file_index + 1
+            file_index = file_index + 1'''
 
 
 '''
@@ -311,9 +320,7 @@ def extra_feature_optimization():
                 peoples_ID = set() # delete the repeated words
                 keywords = []
 
-                # name_list = None
-                #name_list = list(jieba.cut(item[1],cut_all = False))
-                #print(name_list)
+
                 time_flag = False
 
                 if item[9] and isinstance(item[9],list):
@@ -357,8 +364,8 @@ def extra_feature_optimization():
                 feature.append([item[0],item[1],item[2],item[3],item[5],item[6],item[7],keywords,release_time,topic,programtype,peoples,peoples_ID])
 
 # ID, name, createtime, displaytime, formtype, cduration, detail, keywords, release_time, topic, programtype, peoples, peoplesID
-
-    # find the top 2000 actors
+    map ={}
+    #find the top 2000 actors
     counter = collections.Counter(actor_lst)
     sorted_actor = sorted(counter.items(), key= lambda x:x[1], reverse=True)
     invalid_actor = dict(sorted_actor[:300])
@@ -368,20 +375,24 @@ def extra_feature_optimization():
     for item in invalid_actor:
         invalid_actor[item] = num
         num = num + 1
+    map['actor'] = invalid_actor
 
     display_dict = {'1000':0,'1001':1,'1002':2,'1003':3,'1004':4,'1005':5,'1006':6,'1007':7,'1008':8,'1009':9,'1010':10,'1011':11}
+    map['display'] = display_dict
 
     num = 0
     form_type_dict = {}
     for i in form_type_set:
         form_type_dict[i] = num
         num = num + 1
+    map['form_type'] = form_type_dict
 
     programtype_dict = {}
     num=0
     for i in program_type_set:
         programtype_dict[i] = num
         num = num + 1
+    map['program_type'] = programtype_dict
 
     topic_dict = {}
     topic_len = len(topic_set)
@@ -389,6 +400,10 @@ def extra_feature_optimization():
     for i in topic_set:
         topic_dict[i] = num
         num = num + 1
+    map['topic'] = topic_dict
+
+    with open('../../map/mapping.txt','w',encoding='utf-8') as fwrite:
+        fwrite.write(json.dumps(map,ensure_ascii=False))
 
     count = 0
     tmp_feature = {}
@@ -423,11 +438,11 @@ def extra_feature_optimization():
 
         #最终特征
         tmp_lst = []
-        tmp_lst.append(feature[index][2])#
+        tmp_lst.append(feature[index][2])#item[2]
         tmp_lst.append(display_num)
         tmp_lst.append(form_type_num)
-        tmp_lst.append(feature[index][5])
-        tmp_lst.append(feature[index][8])
+        tmp_lst.append(feature[index][5])#item[6]
+        tmp_lst.append(feature[index][8])#release_time
         tmp_lst.append(topic_vector.tolist())
         tmp_lst.append(programtype_num)
         tmp_lst.append(one_hot_actor.tolist())
