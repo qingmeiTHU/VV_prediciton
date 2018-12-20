@@ -58,94 +58,51 @@ feature_list：要使用的特征索引的list，一共12个特征，特征索�
 11-历史pv
 12-pv
 """
-def flatten(file_list):
-    flatten_data = []
-    flatten_target = []
+def flatten():
     KNN_data = []
-    KNN_target = []
+    click_data = []
 
-    count = 0
-    for index in file_list:
-        print('file ' + str(index) + ' is processing')
-        with open(os.path.join(os.path.abspath('..'), 'feature_1.0', str(index) + '.txt'), 'r', encoding='UTF-8') as fread:
+    click_path = os.path.join(os.path.abspath('..'), 'feature_1.0', 'click')
+    knn_path = os.path.join(os.path.abspath('..'), 'feature_1.0', 'knn')
+    files_click = os.listdir(click_path)
+    files_knn = os.listdir(knn_path)
+
+    for file in files_knn:
+        print('file ' + file + ' is processing')
+        with open(os.path.join(knn_path, file), 'r', encoding='UTF-8') as fread:
             res = fread.read()
             res = json.loads(res)
-            
             for item in res:
-                if int(res[item][0])!= 1:
-                    continue
-                count = count + 1
-                tmp = []
-                tmp.extend(res[item][6])
-                tmp.append(res[item][11])
-                flatten_data.append(tmp)
-                flatten_target.append(int(res[item][12]))
-                KNN_tmp = []
-                feature_list = [1,7,8,6,11,12,2,3,5,9,10]
+                KNN_tmp = [item]
+                feature_list = [1, 7, 8, 6, 2, 3, 5, 9, 10]
                 for i in feature_list:
                     if isinstance(res[item][i], list):
                         KNN_tmp.extend(res[item][i])
                     else:
                         KNN_tmp.append(res[item][i])
                 KNN_data.append(KNN_tmp)
-                KNN_target.append(int(res[item][11]))
+            path = os.path.join(os.path.abspath('..'), 'dataset', 'knn', file)
+            numpy.savetxt(path, numpy.array(KNN_data, dtype=int))
+            KNN_data.clear()
 
-    target = list(flatten_target)
-    target.sort(reverse=True)
-    level1 = int(len(target)*0.001)
-    level2 = int(len(target)*0.003)
-    level3 = int(len(target)*0.043)
-    level4 = int(len(target)*0.243)
-    print(str(target[0]) + ' ' + str(target[len(target)-1]))
-    print(str(target[level1]) + ' ' + str(target[level2]) + ' ' + str(target[level3]) + ' ' + str(target[level4]))
-    for i in range(len(flatten_target)):
-        if flatten_target[i] < target[level4]:
-            flatten_target[i] = 0
-        elif flatten_target[i] < target[level3]:
-            flatten_target[i] = 1
-        elif flatten_target[i] < target[level2]:
-            flatten_target[i] = 2
-        elif flatten_target[i] < target[level1]:
-            flatten_target[i] = 3
-        else:
-            flatten_target[i] = 4
-
-
-    flatten_loc = numpy.array([i for i in range(len(flatten_data))])
-    flatten_target = numpy.array(flatten_target)
-
-    train_loc, test_loc, train_target, test_target = train_test_split(flatten_loc, flatten_target, test_size=0.3, random_state=0)
-
-    flatten_data = numpy.array(flatten_data, dtype = 'float64')
-    KNN_data = numpy.array(KNN_data, dtype='float64')
-    KNN_target = numpy.array(KNN_target, dtype='int')
-    print(Counter(KNN_data[:, 28]))
-    print(count)
-    train_data_path = os.path.join(os.path.abspath('..'), 'dataset', 'train_data.txt')
-    numpy.savetxt(train_data_path, flatten_data[train_loc])
-    train_target_path = os.path.join(os.path.abspath('..'), 'dataset', 'train_target.txt')
-    numpy.savetxt(train_target_path, train_target)
-
-    test_data_path = os.path.join(os.path.abspath('..'), 'dataset', 'test_data.txt')
-    numpy.savetxt(test_data_path, flatten_data[test_loc])
-    test_target_path = os.path.join(os.path.abspath('..'), 'dataset', 'test_target.txt')
-    numpy.savetxt(test_target_path, test_target)
-
-    knn_train_data_path = os.path.join(os.path.abspath('..'), 'dataset', 'knn_data.txt')
-    numpy.savetxt(knn_train_data_path, KNN_data[train_loc])
-    knn_train_target_path = os.path.join(os.path.abspath('..'), 'dataset', 'knn_target.txt')
-    numpy.savetxt(knn_train_target_path, KNN_target[train_loc])
-
-    knn_test_data_path = os.path.join(os.path.abspath('..'), 'dataset', 'knn_test_data.txt')
-    numpy.savetxt(knn_test_data_path, KNN_data[test_loc])
-    knn_test_target_path = os.path.join(os.path.abspath('..'), 'dataset', 'knn_test_target.txt')
-    numpy.savetxt(knn_test_target_path, KNN_target[test_loc])
+    for file in files_click:
+        print('file ' + file + ' is processing')
+        with open(os.path.join(click_path, file), 'r', encoding='UTF-8') as fread:
+            res = fread.read()
+            res = json.loads(res)
+            for item in res:
+                tmp = list()
+                tmp.append(item)
+                tmp.extend(res[item][6])
+                tmp.append(res[item][11])
+                click_data.append(tmp)
+            path = os.path.join(os.path.abspath('..'), 'dataset', 'click', file)
+            numpy.savetxt(path, numpy.array(click_data, dtype=int))
+            click_data.clear()
 
 
 if __name__ == '__main__':
-
-    #flatten([1,2])
-    flatten([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21])
+    flatten()
 
 
 

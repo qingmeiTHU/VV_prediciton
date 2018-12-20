@@ -8,6 +8,7 @@
 import json
 import os
 import numpy
+import random
 import imp
 from collections import Counter
 from sklearn.model_selection import train_test_split, cross_val_score
@@ -28,67 +29,53 @@ from sklearn.neighbors import KNeighborsRegressor
 """
 获取数据x和y
 """
-def get_data(data_dir, target_dir):
-    data = []
-    target = []
-    data = numpy.loadtxt('../dataset/'+ data_dir)
-    
-    data = numpy.array(data, dtype = 'float64')
-    target = numpy.array(target, dtype='int')
+def rfc_get_data():
+    path = os.path.join(os.path.abspath('..'), 'dataset', 'click')
+    files = os.listdir(path)
 
-    data_max = numpy.max(data, axis=0)#axis=0 -> max value of each column
-    data_max[data_max==0]=1
-    data_min = numpy.min(data, axis=0)
-    data = (data - data_min)/(data_max - data_min)
-    data = numpy.nan_to_num(data)
+    res_path = os.path.join(os.path.abspath('../..'), 'predict')
 
-    return data
+    for file in files:
+        data = numpy.loadtxt(os.path.join(path, file))
+        res = rfc_predict(data)
+        fwrite = open(os.path.join(res_path, file), 'w', encoding='utf-8')
+        fwrite.write(json.dumps(res, ensure_ascii=False))
 
-"""
-try regression again 
-"""
-def Linear_Regression():
-    test_data, test_target, train_data, train_target = get_data()
-    model_LinearRegression = Lasso(alpha=0.1)
-    model_LinearRegression.fit(train_data, train_target)
-    predicted = model_LinearRegression.predict(test_data)
-    print(mean_squared_error(predicted, test_target)) 
-    print(predicted.tolist()[:30])
-    print(test_target.tolist()[:30])
-    # save_path_name = ''
-    #joblib.dump(model, save_path_name)
+def rfc_predict(data):
+    res = data[:, 0:1]
+    ID = data[:, 0:25]
+    input = data[:, 25:]
+    input_max = numpy.max(input, axis=0)  # axis=0 -> max value of each column
+    input_max[input_max == 0] = 1
+    input_min = numpy.min(input, axis=0)
+    input = (input - input_min) / (input_max - input_min)
+    input = numpy.nan_to_num(input)
 
-"""
-逻辑斯蒂分类
-"""
-def Logistic_Regression():
-    test_data, test_target, train_data, train_target = get_data()
-    model_LogisticRegression = LogisticRegression()
-    model_LogisticRegression.fit(train_data,train_target)
-    print(model_LogisticRegression.coef_)
-    predicted_target = model_LogisticRegression.predict(test_data)
-    print(classification_report(test_target, predicted_target)) 
+    data = numpy.hstack((ID, input))
 
-
-def RFC_predict():
     save_path = '../../model/rfc.m'
-    data = get_data('data.txt')
     model_rfc = joblib.load(save_path)
-    predicted = model_rfc.predict_proba(data)
+
+    predicted = model_rfc.predict_proba(data[:, 1:])
     predicted_target = numpy.argmax(predicted, axis=1)
     predicted_prob = numpy.max(predicted, axis=1)
     target = predicted_target.reshape(-1, 1)
     prob = predicted_prob.reshape(-1, 1)
-    # return ID + target + probability, for recommendation
+
+    res = numpy.hstack((res, target))
+    res = numpy.hstack((res, prob))
+    # return ID + target + probability, for sorting
+
+    res = res.tolist()
+    return res
 
 '''
-ID + 6 + other features for knn
+1+7+8(3) + 6(24) + other features for knn
 '''
-def KNN_predict():
-    print('knn model is testing')
-    data = numpy.loadtxt('../dataset/'+ 'knn_data.txt')
+def cold_start():
+    print('knn model is running')
 
-    # load the model into dict
+    # load the knn model into dict
     model_path = '../../model/'
     models = os.listdir(model_path)
     model_dict = {}
@@ -99,77 +86,64 @@ def KNN_predict():
         tmp_model = joblib.load(os.path.join(model_path, model))
         model_dict[key] = tmp_model
 
-    predict_target = []
-    data_dict = {}
-    num = data.shape[0]
-    for index in range(num):
-        item = data[index, :]
-        key = str(item[0])+'_'+str(item[1])+'_'+str(item[2])
-        if key not in data_dict:
-            data_dict[key] = []
-        data_dict[key].append(item[3:])
+    path = os.path.join(os.path.abspath('..'), 'dataset', 'knn')
+    files = os.listdir(path)
 
-    data = []
-    predicted = []
-    for key in data_dict:
-        if key in model_dict:
-            model = model_dict[key]
+    res_path = os.path.join(os.path.abspath('../..'), 'predict')
+
+    for file in files:
+        data = numpy.loadtxt(os.path.join(path, file))
+        knn_key = data[:, 0:28]
+        knn_data = data[:, 28:]
+        data_max = numpy.max(knn_data, axis=0)
+        data_max[data_max == 0] = 1
+        data_min = numpy.min(knn_data, axis=0)
+        knn_data = (knn_data - data_min)/(data_max - data_min)
+        knn_data = numpy.nan_to_num(knn_data)
+        data = numpy.hstack((knn_key, knn_data))
+ 
+        data_dict = {}
+        num = data.shape[0]
+
+        for index in range(num):
+            item = data[index, :]
+            key = str(item[1]) + '_' + str(item[2]) + '_' + str(item[3])
+            if key not in data_dict:
+                data_dict[key] = []
+            tmp = [item[0]]
+            tmp.extend(item[4:])
+            data_dict[key].append(tmp)
+
+        data = []
+        for key in data_dict:
             value = numpy.array(data_dict[key])
-            tmp = model.predict(value[:, 26:])
+            if key in model_dict:
+                model = model_dict[key]
+                print(value[:, 25:].shape)
+                tmp = model.predict(value[:, 25:])
 
-            tmp = tmp.reshape(-1, 1)
-            tmp_data = value[:, :24]
-            tmp_data = numpy.hstack((tmp_data, tmp))
-            data.extend(tmp_data)
-        else:
-            tmp = numpy.array([[5] for i in range(value.shape[0])])
-            tmp_data = value[:, :24]
-            tmp_data = numpy.hstack((tmp_data, tmp))
+                tmp = tmp.reshape(-1, 1)
+                tmp_data = value[:, :25]
+                tmp_data = numpy.hstack((tmp_data, tmp))
+                data.extend(tmp_data)
+            else:
+                tmp = numpy.array([random.randint(1,10) for i in range(value.shape[0])])
+                tmp_data = value[:, :25]
+                tmp = tmp.reshape(-1,1)
+                print(tmp.shape)
+                print(tmp_data.shape)
+                tmp_data = numpy.hstack((tmp_data, tmp))
+                data.extend(tmp_data)
 
-            data.extend(tmp_data)
+        data = numpy.array(data)
+        res = rfc_predict(data)
+        fwrite = open(os.path.join(res_path, file), 'w', encoding='utf-8')
+        fwrite.write(json.dumps(res, ensure_ascii=False))
 
-    data = numpy.array(data)
+        # code for saving the result
     print('knn predict is done')
-    return data
 
-
-def coldstart():
-    print('cold start is training')
-    knn_data = KNN_predict()
-
-    data_max = numpy.max(knn_data, axis=0)  # axis=0 -> max value of each column
-    data_max[data_max == 0] = 1
-    data_min = numpy.min(knn_data, axis=0)
-    data = (knn_data - data_min) / (data_max - data_min)
-    knn_data = numpy.nan_to_num(data)
-
-    save_path = '../../model/rfc.m'
-    model_rfc = joblib.load(save_path)
-
-    predicted = model_rfc.predict_proba(knn_data)
-
-    predicted_target = numpy.argmax(predicted, axis=1)
-    predicted_prob = numpy.max(predicted, axis=1)
-    target = predicted_target.reshape(-1, 1)
-    prob = predicted_prob.reshape(-1, 1)
-
-
-def nn():
-    test_data, test_target, train_data, train_target = get_data()
-    target = keras.utils.to_categorical(train_target)
-    model = keras.Sequential()
-    model.add(keras.layers.Dense(300, activation='relu',input_shape=(train_data.shape[1],)))
-    model.add(keras.layers.Dense(100, activation='relu'))
-    model.add(keras.layers.Dense(40, activation='relu'))
-    model.add(keras.layers.Dense(5, activation='softmax'))
-    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-    model.fit(train_data, target,epochs=20,batch_size=100)
-    predicted = model.predict(test_data)
-    proba = numpy.argmax(predicted, axis=1)
-    #label = numpy.where(proba=predicted)
-    print(classification_report(test_target, proba))
-    #print(proba)
 
 if __name__ == '__main__':
-    RFC_predict()
-    coldstart()
+    rfc_get_data()
+    cold_start()

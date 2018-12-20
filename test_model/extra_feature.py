@@ -356,7 +356,7 @@ def extra_feature_optimization():
                 if item[3] and item[3] in display_dict:
                     display_type_num = display_dict[item[3]]
 
-                feature[item[0]] = [item[0],item[2],display_type_num,form_type_num,item[6],release_time,topic_vector.tolist(),program_type_num,one_hot_actor.tolist()]
+                feature[item[0]] = [item[2],display_type_num,form_type_num,item[6],release_time,topic_vector.tolist(),program_type_num,one_hot_actor.tolist()]
 
 # ID, name, createtime, displaytime, formtype, cduration, detail, keywords, release_time, topic, programtype, peoples, peoplesID
             print('file ' + file + ' is processing')

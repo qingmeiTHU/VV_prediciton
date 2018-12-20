@@ -10,6 +10,21 @@ import json
 import math
 import numpy
 
+def click_dict():
+    click = {}
+    time = ''
+    path = os.path.join(os.path.abspath('..'), 'dat_2.0')
+    files = os.listdir(path)
+    for file in files:
+        with open(os.path.join(os.path.abspath('..'), 'dat_2.0', file), 'r', encoding='UTF-8') as fread:
+            for line in fread.readlines():
+                line = line.replace('\r', '').replace('\n', '')
+                tmp = line.split('|')
+                click[tmp[1]] = int(tmp[2])
+                time = tmp[0]
+
+    return click, time
+
 """
 将特征和数据进行拼接，feature_1.0中的格式如下
 Key:
@@ -30,39 +45,44 @@ Value(13):
     PV值
 """
 def concate_to_feature_1():
-    for index in range(1,22):
-        print('file ' + str(index) + ' is processing')
+    path = os.path.join(os.path.abspath('..'), 'feature')
+    files = os.listdir(path)
+
+    click, time = click_dict()
+
+    click_data = {}
+
+    for file in files:
+        print('file ' + file + ' is processing')
         dataset = {}
 
-        empty = {}
-        with open(os.path.join(os.path.abspath('..'), 'feature', str(index) + '.txt'), 'r', encoding='UTF-8') as fread_feature, \
-                open(os.path.join(os.path.abspath('..'), 'dat_2.0', str(index) + '.txt'), 'r', encoding='UTF-8') as fread_data, \
-                open(os.path.join(os.path.abspath('..'), 'feature_1.0', str(index) + '.txt'), 'w', encoding='UTF-8') as fwrite:
+        with open(os.path.join(os.path.abspath('..'), 'feature', file), 'r', encoding='UTF-8') as fread_feature, \
+                open(os.path.join(os.path.abspath('..'), 'feature_1.0', 'knn', file), 'w', encoding='UTF-8') as fwrite:
 
             feature_dict = fread_feature.read()
             feature_dict = json.loads(feature_dict)
-            
-            for line in fread_data.readlines():
-                line = line.replace('\r','').replace('\n','')
-                tmp = line.split('|')
-                if tmp[1] not in feature_dict:
-                    continue
 
-                Item = feature_dict[tmp[1]]
-                time_vector, time_num, weekday_num = process_time(tmp[0])
-                releasetime_interval = calculate_releasetime_interval(tmp[0], Item[4])
-                createtime_interval = calculate_createtime_interval(tmp[0], Item[0])
-                key = tmp[0] + '_' + tmp[1]
-
-                dataset[key] = []
-                dataset[key].extend(Item[1:4])
-                dataset[key].extend(Item[5:7])
-                dataset[key].append(Item[7][0:300])
-                dataset[key].extend([time_vector, time_num, weekday_num, createtime_interval, releasetime_interval, tmp[2], tmp[3]])
+            for key in feature_dict:
+                Item = feature_dict[key]
+                time_vector, time_num, weekday_num = process_time(time)
+                releasetime_interval = calculate_releasetime_interval(time, Item[4])
+                createtime_interval = calculate_createtime_interval(time, Item[0])
+                tmp = []
+                tmp.extend(Item[1:4])
+                tmp.extend(Item[5:7])
+                tmp.append(Item[7][0:300])
+                tmp.extend([time_vector, time_num, weekday_num, createtime_interval, releasetime_interval])
+                if key in click:
+                    tmp.append(click[key])
+                    click_data[key] = tmp
+                else:
+                    dataset[key] = tmp
 
             fwrite.write(json.dumps(dataset, ensure_ascii=False))
-
             dataset.clear()
+
+    with open(os.path.join(os.path.abspath('..'), 'feature_1.0', 'click', 'data.txt'), 'w', encoding='UTF-8') as fwrite:
+        fwrite.write(json.dumps(click_data, ensure_ascii=False))
 
 
 if __name__ == '__main__':

@@ -46,15 +46,15 @@ file_list：要遍历的特征文件的list，可以选取1-21中的任意多个
 feature_list：要使用的特征索引的list，一共12个特征，特征索引（0-11）和特征名字的对应关系如下
 0--displaytype
 1--formtype
-2--duration
-3--主题_one_hot
+2--duration #1
+3--主题_one_hot #
 4--program_type
-5-演员_one_hot
+5-演员_one_hot #300
 6-时间vector # 24
 7-时间数
 8-星期数
-9-创建时间间隔
-10-上映时间间隔
+9-创建时间间隔 #1
+10-上映时间间隔 #1
 11-历史pv
 12-pv
 """
@@ -128,10 +128,7 @@ def flatten():
     knn_train_target_path = os.path.join(os.path.abspath('..'), 'dataset', 'knn_target.txt')
     numpy.savetxt(knn_train_target_path, KNN_target)
 
-
 if __name__ == '__main__':
-
-    #flatten([1,2])
     flatten()
 
 

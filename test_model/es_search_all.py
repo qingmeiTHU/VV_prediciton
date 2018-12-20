@@ -16,14 +16,17 @@ import os
 LIST = ['1002601', '1002581', '1003861', '1003862', '1003863', '1003864', '1003865', '1003866', '1004041', '1004121',
         '1002781', '1004261', '1004262', '1004281', '1004322', '1004321', '1004301', '1004422', '1004421', '1001381']
 
-def query_first(LIST) :
+def query_first() :
     query_data = {
         "size": 10000,
         "query": {
             "constant_score":{
                 "filter": {
-                    "terms": {
-                        "PRDPACK_ID": LIST
+                    "bool":{
+                        "must":[
+                            {"term": {"fields.DISPLAYTYPE": '1001'}},
+                            {"terms": {"PRDPACK_ID": LIST}}
+                        ]
                     }
                 }
             }
@@ -97,7 +100,7 @@ def es_search():
             source = item['_source']
             fields = source['fields']
 
-            if 'DISPLAYTYPE' not in fields.keys() or fields['DISPLAYTYPE']!='1001':
+            if 'DISPLAYTYPE' not in fields.keys():
                 continue
 
             # fix the missed CDuration value
@@ -164,6 +167,7 @@ def es_search():
         fwrite.write(res)
         fwrite.flush()
         result.clear()
+    print(num)
 
 if __name__ == '__main__':
     es_search()

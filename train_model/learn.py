@@ -115,6 +115,7 @@ def KNN_train():
         model = KNeighborsRegressor(n_neighbors=neighbors)
         model.fit(numpy.array(data), numpy.array(target_dict[key]))
         model_dict[key]= model
+        print(numpy.array(data).shape)
 
     print('knn model is done')
     save_path = '../../model/'
